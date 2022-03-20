@@ -188,6 +188,6 @@
       ansible.builtin.cron:
         name: Cleanup minecraft weather
         hour: "*"
-        minute: "*/5"
+        minute: "*/1"
         job: /usr/local/bin/minecraft-weather-clear.sh
         user: root
