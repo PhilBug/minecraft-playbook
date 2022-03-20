@@ -1,4 +1,6 @@
 ---
 minecraft_view_distance: 32
+minecraft_tick_distance: 12
+minecraft_max_threads: 0
 minecraft_port: 19132
 minecraft_dir: /opt/minecraft

@@ -11,6 +11,8 @@ services:
       DIFFICULTY: normal
       ALLOW_CHEATS: "true"
       VIEW_DISTANCE: {{ minecraft_view_distance }}
+      TICK_DISTANCE: {{ minecraft_tick_distance }}
+      MAX_THREADS: {{ minecraft_max_threads }}
     ports:
       - {{ minecraft_port }}:{{ minecraft_port }}/udp
     volumes:

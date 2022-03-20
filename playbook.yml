@@ -87,6 +87,7 @@
     - name: Install list of packages
       ansible.builtin.apt:
         name:
+          - socat
           - apt-transport-https
           - ca-certificates
           - htop
@@ -104,6 +105,12 @@
           - iotop
         state: present
         update_cache: yes
+
+    - name: Download ctop
+      get_url:
+        url: https://github.com/bcicen/ctop/releases/download/0.7.6/ctop-0.7.6-linux-amd64
+        dest: /usr/local/bin/ctop
+        mode: '0641'
 
     - name: Install snap packages
       community.general.snap:
