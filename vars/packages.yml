@@ -1,0 +1,26 @@
+---
+pip_install_packages:
+  - name: docker
+  - name: docker-compose
+
+mc_monitor_version: 0.10.6
+ctop_version: 0.7.6
+
+apt_packages:
+  - socat
+  - apt-transport-https
+  - ca-certificates
+  - htop
+  - git
+  - ncdu
+  - curl
+  - gnupg
+  - lsb-release
+  - software-properties-common
+  - cron
+  - rsync
+  - python3-jmespath
+  - fish
+  - tree
+  - iotop
+  - net-tools

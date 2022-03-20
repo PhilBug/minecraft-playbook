@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+re='^[0-9]+$'
+
+for _ in {1..4}; do
+    PLAYERS_COUNT=$(mc-monitor status-bedrock --host {{ nginx_domain }} | tr -s ' ' | cut -d' ' -f4 | cut -d'=' -f2)
+    # check if parsed value is a number
+    if ! [[ $PLAYERS_COUNT =~ $re ]]; then
+        PLAYERS_COUNT=0
+    fi
+    docker exec nginx bash -c "sed -i \"s/fa-[[:digit:]]\+/fa-$PLAYERS_COUNT/\" /www/data/index.html"
+    sleep 15
+done

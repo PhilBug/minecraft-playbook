@@ -1,3 +1,4 @@
 ---
 os_auditd_enabled: false
 os_auth_pam_passwdqc_enable: false
+cache_dir: /root/.cache/ansible

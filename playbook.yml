@@ -86,31 +86,15 @@
 
     - name: Install list of packages
       ansible.builtin.apt:
-        name:
-          - socat
-          - apt-transport-https
-          - ca-certificates
-          - htop
-          - git
-          - ncdu
-          - curl
-          - gnupg
-          - lsb-release
-          - software-properties-common
-          - cron
-          - rsync
-          - python3-jmespath
-          - fish
-          - tree
-          - iotop
+        name: "{{ apt_packages }}"
         state: present
         update_cache: yes
 
     - name: Download ctop
       get_url:
-        url: https://github.com/bcicen/ctop/releases/download/0.7.6/ctop-0.7.6-linux-amd64
+        url: https://github.com/bcicen/ctop/releases/download/{{ ctop_version }}/ctop-{{ ctop_version }}-linux-amd64
         dest: /usr/local/bin/ctop
-        mode: '0641'
+        mode: "0641"
 
     - name: Install snap packages
       community.general.snap:
@@ -143,13 +127,6 @@
       notify: nginx_restart
       tags: deploy
 
-    - name: Start nginx service
-      community.docker.docker_compose:
-        build: yes
-        project_src: "{{ nginx_dir }}/homepage"
-      register: output
-      tags: deploy
-
     - name: Copy minecraft config files
       ansible.builtin.template:
         src: ./data/minecraft/templates/docker-compose.yml.j2
@@ -160,20 +137,71 @@
       notify: minecraft_restart
       tags: deploy
 
-    - name: Start minecraft service
-      community.docker.docker_compose:
-        build: no
-        project_src: "{{ minecraft_dir }}"
-      register: output
-      tags: deploy
-
-    - name: Copy script for clearing minecraft weather
-      ansible.builtin.copy:
-        src: ./data/minecraft-weather-clear.sh
-        dest: /usr/local/bin/minecraft-weather-clear.sh
+    - name: Create cache directory
+      ansible.builtin.file:
+        path: "{{ cache_dir }}"
+        state: directory
         owner: root
-        mode: 0641
+        mode: 0640
         force: yes
+
+    - name: Download mc-monitor
+      get_url:
+        url: https://github.com/itzg/mc-monitor/releases/download/{{ mc_monitor_version }}/mc-monitor_{{ mc_monitor_version }}_linux_amd64.tar.gz
+        dest: "{{ cache_dir }}/mc-monitor.tgz"
+
+    - name: Extract mc-monitor.tgz
+      ansible.builtin.unarchive:
+        src: "{{ cache_dir }}/mc-monitor.tgz"
+        dest: "{{ cache_dir }}"
+        remote_src: yes
+        mode: "0641"
+
+    - name: Copy mc-monitor binary
+      ansible.builtin.copy:
+        src: "{{ cache_dir }}/mc-monitor"
+        dest: /usr/local/bin/
+        remote_src: yes
+        mode: "0641"
+
+    - name: Copy script for checking number of players and updating index.html
+      ansible.builtin.template:
+        src: ./data/scripts/refresh-num-of-players.sh.j2
+        dest: /usr/local/bin/refresh-num-of-players.sh
+        owner: root
+        mode: "0641"
+        force: yes
+
+    - name: "Crontab: fill PATH variable"
+      ansible.builtin.cron:
+        name: PATH
+        env: yes
+        value: /usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin
+
+    - name: "Crontab: fill LD_LIBRARY_PATH variable"
+      ansible.builtin.cron:
+        name: LD_LIBRARY_PATH
+        env: yes
+        value: /usr/local/lib
+
+    - name: "Crontab: refresh number of players"
+      ansible.builtin.cron:
+        name: Refresh number of players
+        hour: "*"
+        minute: "*"
+        job: /usr/local/bin/refresh-num-of-players.sh
+        user: root
+
+    - name: Copy minecraft scripts
+      ansible.builtin.copy:
+        src: ./data/scripts/{{ item }}
+        dest: /usr/local/bin/{{ item }}
+        owner: root
+        mode: "0641"
+        force: yes
+      loop:
+        - minecraft-weather-clear.sh
+        - minecraft-restart-server.sh
 
     - name: "Crontab: refresh certificates"
       ansible.builtin.cron:
@@ -195,6 +223,14 @@
       ansible.builtin.cron:
         name: Cleanup minecraft weather
         hour: "*"
-        minute: "*/1"
+        minute: "*"
         job: /usr/local/bin/minecraft-weather-clear.sh
+        user: root
+
+    - name: "Crontab: minecraft restart server"
+      ansible.builtin.cron:
+        name: Minecraft restart server
+        hour: 7
+        minute: 10
+        job: /usr/local/bin/minecraft-restart-server.sh
         user: root

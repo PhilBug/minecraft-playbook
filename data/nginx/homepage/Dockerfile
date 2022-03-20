@@ -1,4 +1,4 @@
-FROM nginx
+FROM nginx:latest
 
 ENV DOMAIN_NAME kwadratowe-karpicko.tk
 
