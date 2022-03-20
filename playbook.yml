@@ -1,0 +1,193 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+
+  handlers:
+    - name: nginx_restart
+      community.docker.docker_compose:
+        project_src: "{{ nginx_dir }}/homepage"
+        build: yes
+        restarted: yes
+
+    - name: minecraft_restart
+      community.docker.docker_compose:
+        project_src: "{{ minecraft_dir }}"
+        build: no
+        restarted: yes
+
+  tasks:
+    - name: Include all variables
+      include_vars:
+        dir: vars
+
+    - name: Set timezone to Warsaw
+      community.general.timezone:
+        name: Europe/Warsaw
+
+    - name: Harden ssh
+      include_role:
+        name: devsec.hardening.ssh_hardening
+      tags: security
+
+    - name: Harden os
+      include_role:
+        name: devsec.hardening.os_hardening
+      tags: security
+
+    - name: Install pip
+      include_role:
+        name: geerlingguy.pip
+      tags: provisioning
+
+    - name: Install docker
+      include_role:
+        name: geerlingguy.docker
+      tags: provisioning
+
+    - name: Set ufw logging
+      community.general.ufw:
+        logging: "on"
+
+    - name: Reject connections instead of denying
+      community.general.ufw:
+        rule: reject
+        port: auth
+        log: yes
+
+    - name: Limit ssh connections
+      community.general.ufw:
+        rule: limit
+        port: ssh
+        proto: tcp
+
+    - name: Allow all access to tcp port 22
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Allow all access to tcp port 80
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Allow all access to tcp port 443
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Allow all access to udp port {{ minecraft_port }}
+      community.general.ufw:
+        rule: allow
+        port: "{{ minecraft_port }}"
+        proto: udp
+
+    - name: Install list of packages
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - htop
+          - git
+          - ncdu
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+          - cron
+          - rsync
+          - python3-jmespath
+          - fish
+          - tree
+          - iotop
+        state: present
+        update_cache: yes
+
+    - name: Install snap packages
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Generate https certificate
+      ansible.builtin.command: certbot certonly --standalone -d {{ nginx_domain }} --email {{ certbot_email }} --agree-tos --noninteractive
+      args:
+        creates: /etc/letsencrypt/live/{{ nginx_domain }}/fullchain.pem
+
+    - name: Create directories for services
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        mode: 0640
+        force: yes
+      loop:
+        - "{{ nginx_dir }}"
+        - "{{ minecraft_dir }}"
+
+    - name: Copy nginx config files
+      ansible.builtin.copy:
+        src: ./data/nginx/homepage
+        dest: "{{ nginx_dir }}/"
+        owner: root
+        mode: 0640
+        force: yes
+      notify: nginx_restart
+      tags: deploy
+
+    - name: Start nginx service
+      community.docker.docker_compose:
+        build: yes
+        project_src: "{{ nginx_dir }}/homepage"
+      register: output
+      tags: deploy
+
+    - name: Copy minecraft config files
+      ansible.builtin.template:
+        src: ./data/minecraft/templates/docker-compose.yml.j2
+        dest: "{{ minecraft_dir }}/docker-compose.yml"
+        owner: root
+        mode: 0640
+        force: yes
+      notify: minecraft_restart
+      tags: deploy
+
+    - name: Start minecraft service
+      community.docker.docker_compose:
+        build: no
+        project_src: "{{ minecraft_dir }}"
+      register: output
+      tags: deploy
+
+    - name: Copy script for clearing minecraft weather
+      ansible.builtin.copy:
+        src: ./data/minecraft-weather-clear.sh
+        dest: /usr/local/bin/minecraft-weather-clear.sh
+        owner: root
+        mode: 0641
+        force: yes
+
+    - name: "Crontab: refresh certificates"
+      ansible.builtin.cron:
+        name: Refresh https certificates
+        hour: 6
+        minute: 0
+        job: certbot certonly -n --webroot -w /usr/share/nginx/html -d "{{ nginx_domain }}" --deploy-hook='docker exec nginx nginx -s reload'
+        user: root
+
+    - name: "Crontab: cleanup docker images"
+      ansible.builtin.cron:
+        name: Cleanup docker images
+        hour: 7
+        minute: 0
+        job: docker system prune -af
+        user: root
+
+    - name: "Crontab: minecraft cleanup weather"
+      ansible.builtin.cron:
+        name: Cleanup minecraft weather
+        hour: "*"
+        minute: "*/5"
+        job: /usr/local/bin/minecraft-weather-clear.sh
+        user: root

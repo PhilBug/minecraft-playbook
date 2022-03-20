@@ -1,0 +1,4 @@
+---
+nginx_dir: /opt/nginx
+nginx_domain: kwadratowe-karpicko.tk
+certbot_email: johnnywiertara@gmail.com

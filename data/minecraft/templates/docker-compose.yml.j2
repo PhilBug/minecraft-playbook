@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  minecraft_server:
+    image: itzg/minecraft-bedrock-server:latest
+    container_name: minecraft_server
+    restart: unless-stopped
+    environment:
+      EULA: "TRUE"
+      GAMEMODE: survival
+      DIFFICULTY: normal
+      ALLOW_CHEATS: "true"
+      VIEW_DISTANCE: {{ minecraft_view_distance }}
+    ports:
+      - {{ minecraft_port }}:{{ minecraft_port }}/udp
+    volumes:
+      - {{ minecraft_dir }}/data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    stdin_open: true
+    tty: true

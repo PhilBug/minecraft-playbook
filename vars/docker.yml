@@ -1,0 +1,23 @@
+---
+# change to latest to force an upgrade
+docker_package_state: present
+
+# Service options.
+docker_service_state: started
+docker_service_enabled: true
+
+# Docker Compose options.
+docker_install_compose: true
+docker_compose_version: "1.29.2"
+
+# Docker repo URL.
+docker_repo_url: https://download.docker.com/linux
+
+# Used only for Debian/Ubuntu. Switch 'stable' to 'nightly' if needed.
+docker_apt_release_channel: stable
+
+# A list of users who will be added to the docker group.
+docker_users: ["phil"]
+
+# Docker daemon options as a dict
+docker_daemon_options: {}

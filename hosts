@@ -1,0 +1,5 @@
+[all:vars]
+ansible_user=phil
+
+[minecraft]
+45.136.70.92
