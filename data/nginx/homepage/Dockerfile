@@ -12,4 +12,5 @@ COPY ./index.html /www/data/index.html
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
 RUN rm -rf /etc/nginx/conf.d/* && \
-    sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/nginx/nginx.conf
+    sed -i "s/DOMAIN_NAME/${DOMAIN_NAME}/g" /etc/nginx/nginx.conf && \
+    chmod +r -R /www/data
