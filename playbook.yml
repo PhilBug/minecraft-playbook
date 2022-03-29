@@ -1,24 +1,11 @@
 ---
 - hosts: all
-  gather_facts: yes
-  become: yes
-
-  handlers:
-    - name: nginx_restart
-      community.docker.docker_compose:
-        project_src: "{{ nginx_dir }}/homepage"
-        build: yes
-        restarted: yes
-
-    - name: minecraft_restart
-      community.docker.docker_compose:
-        project_src: "{{ minecraft_dir }}"
-        build: no
-        restarted: yes
+  gather_facts: true
+  become: true
 
   tasks:
     - name: Include all variables
-      include_vars:
+      ansible.builtin.include_vars:
         dir: vars
 
     - name: Set timezone to Warsaw
@@ -26,22 +13,22 @@
         name: Europe/Warsaw
 
     - name: Harden ssh
-      include_role:
+      ansible.builtin.include_role:
         name: devsec.hardening.ssh_hardening
       tags: security
 
     - name: Harden os
-      include_role:
+      ansible.builtin.include_role:
         name: devsec.hardening.os_hardening
       tags: security
 
     - name: Install pip
-      include_role:
+      ansible.builtin.include_role:
         name: geerlingguy.pip
       tags: provisioning
 
     - name: Install docker
-      include_role:
+      ansible.builtin.include_role:
         name: geerlingguy.docker
       tags: provisioning
 
@@ -53,7 +40,7 @@
       community.general.ufw:
         rule: reject
         port: auth
-        log: yes
+        log: true
 
     - name: Limit ssh connections
       community.general.ufw:
@@ -88,18 +75,18 @@
       ansible.builtin.apt:
         name: "{{ apt_packages }}"
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Download ctop
-      get_url:
-        url: https://github.com/bcicen/ctop/releases/download/{{ ctop_version }}/ctop-{{ ctop_version }}-linux-amd64
+      ansible.builtin.get_url:
+        url: https://github.com/bcicen/ctop/releases/download/v{{ ctop_version }}/ctop-{{ ctop_version }}-linux-amd64
         dest: /usr/local/bin/ctop
         mode: "0641"
 
     - name: Install snap packages
       community.general.snap:
         name: certbot
-        classic: yes
+        classic: true
 
     - name: Generate https certificate
       ansible.builtin.command: certbot certonly --standalone -d {{ nginx_domain }} --email {{ certbot_email }} --agree-tos --noninteractive
@@ -112,7 +99,7 @@
         state: directory
         owner: root
         mode: 0640
-        force: yes
+        force: true
       loop:
         - "{{ nginx_dir }}"
         - "{{ minecraft_dir }}"
@@ -123,8 +110,14 @@
         dest: "{{ nginx_dir }}/"
         owner: root
         mode: 0640
-        force: yes
-      notify: nginx_restart
+        force: true
+      tags: deploy
+
+    - name: Start nginx
+      community.docker.docker_compose:
+        project_src: "{{ nginx_dir }}/homepage"
+        build: true
+        state: present
       tags: deploy
 
     - name: Copy minecraft config files
@@ -133,8 +126,15 @@
         dest: "{{ minecraft_dir }}/docker-compose.yml"
         owner: root
         mode: 0640
-        force: yes
-      notify: minecraft_restart
+        force: true
+      tags: deploy
+
+    - name: Start minecraft
+      community.docker.docker_compose:
+        project_src: "{{ minecraft_dir }}"
+        build: false
+        pull: true
+        state: present
       tags: deploy
 
     - name: Create cache directory
@@ -143,25 +143,26 @@
         state: directory
         owner: root
         mode: 0640
-        force: yes
+        force: true
 
     - name: Download mc-monitor
-      get_url:
+      ansible.builtin.get_url:
         url: https://github.com/itzg/mc-monitor/releases/download/{{ mc_monitor_version }}/mc-monitor_{{ mc_monitor_version }}_linux_amd64.tar.gz
         dest: "{{ cache_dir }}/mc-monitor.tgz"
+        mode: 0640
 
     - name: Extract mc-monitor.tgz
       ansible.builtin.unarchive:
         src: "{{ cache_dir }}/mc-monitor.tgz"
         dest: "{{ cache_dir }}"
-        remote_src: yes
+        remote_src: true
         mode: "0641"
 
     - name: Copy mc-monitor binary
       ansible.builtin.copy:
         src: "{{ cache_dir }}/mc-monitor"
         dest: /usr/local/bin/
-        remote_src: yes
+        remote_src: true
         mode: "0641"
 
     - name: Copy script for checking number of players and updating index.html
@@ -170,18 +171,18 @@
         dest: /usr/local/bin/refresh-num-of-players.sh
         owner: root
         mode: "0641"
-        force: yes
+        force: true
 
     - name: "Crontab: fill PATH variable"
       ansible.builtin.cron:
         name: PATH
-        env: yes
+        env: true
         value: /usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/sbin
 
     - name: "Crontab: fill LD_LIBRARY_PATH variable"
       ansible.builtin.cron:
         name: LD_LIBRARY_PATH
-        env: yes
+        env: true
         value: /usr/local/lib
 
     - name: "Crontab: refresh number of players"
@@ -198,7 +199,7 @@
         dest: /usr/local/bin/{{ item }}
         owner: root
         mode: "0641"
-        force: yes
+        force: true
       loop:
         - minecraft-weather-clear.sh
         - minecraft-restart-server.sh
