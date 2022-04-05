@@ -27,6 +27,12 @@
         name: geerlingguy.pip
       tags: provisioning
 
+    - name: Install list of packages
+      ansible.builtin.apt:
+        name: "{{ apt_packages }}"
+        state: present
+        update_cache: true
+
     - name: Install docker
       ansible.builtin.include_role:
         name: geerlingguy.docker
@@ -70,12 +76,6 @@
         rule: allow
         port: "{{ minecraft_port }}"
         proto: udp
-
-    - name: Install list of packages
-      ansible.builtin.apt:
-        name: "{{ apt_packages }}"
-        state: present
-        update_cache: true
 
     - name: Download ctop
       ansible.builtin.get_url:

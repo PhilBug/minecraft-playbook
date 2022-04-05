@@ -24,3 +24,4 @@ apt_packages:
   - tree
   - iotop
   - net-tools
+  - fuse-overlayfs

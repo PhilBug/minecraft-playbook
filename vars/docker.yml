@@ -19,5 +19,6 @@ docker_apt_release_channel: stable
 # A list of users who will be added to the docker group.
 docker_users: ["phil"]
 
-# Docker daemon options as a dict
-docker_daemon_options: {}
+# Docker daemon options
+docker_daemon_options:
+  storage-driver: "fuse-overlayfs"
