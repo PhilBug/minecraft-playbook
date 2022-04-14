@@ -37,13 +37,13 @@ function upload_backup_to_bucket() {
 }
 
 function remove_s3_backups_older_than_n_days() {
-    RETENTION_DAYS=45
+    RETENTION_DAYS=$1
     log "Removing backups older than $RETENTION_DAYS days..."
     aws s3 ls "s3://$BUCKET_NAME/" | \
         grep -v "^d" | \
         awk '{print $4}' | \
         sort -r | \
-        tail -n +$RETENTION_DAYS | \
+        tail -n +"$RETENTION_DAYS" | \
         xargs -I {} aws s3 rm "s3://$BUCKET_NAME/{}"
     log "Backups older than $RETENTION_DAYS days removed."
 }
