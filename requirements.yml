@@ -4,4 +4,3 @@ collections:
 roles:
   - src: geerlingguy.docker
   - src: geerlingguy.pip
-  - src: geerlingguy.swap

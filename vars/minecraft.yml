@@ -4,3 +4,6 @@ minecraft_tick_distance: 12
 minecraft_max_threads: 0
 minecraft_port: 19132
 minecraft_dir: /opt/minecraft
+
+minecraft_backup_bucket: kwadratowekarpicko
+bucket_endpoint_url: https://gateway.eu1.storjshare.io

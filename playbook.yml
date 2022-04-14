@@ -103,6 +103,7 @@
       loop:
         - "{{ nginx_dir }}"
         - "{{ minecraft_dir }}"
+        - "{{ aws_config_path }}"
 
     - name: Copy nginx config files
       ansible.builtin.copy:
@@ -165,10 +166,29 @@
         remote_src: true
         mode: "0641"
 
+    - name: Create backups configuration
+      ansible.builtin.template:
+        src: ./data/backups/templates/{{ item }}.j2
+        dest: /root/.aws/{{ item }}
+        owner: root
+        mode: "0600"
+        force: true
+      loop:
+        - config
+        - credentials
+
     - name: Copy script for checking number of players and updating index.html
       ansible.builtin.template:
         src: ./data/scripts/refresh-num-of-players.sh.j2
         dest: /usr/local/bin/refresh-num-of-players.sh
+        owner: root
+        mode: "0641"
+        force: true
+
+    - name: Copy script for performing minecraft world backup and restarting the mc server
+      ansible.builtin.template:
+        src: ./data/scripts/minecraft-backup.sh.j2
+        dest: /usr/local/bin/minecraft-backup.sh
         owner: root
         mode: "0641"
         force: true
@@ -202,7 +222,6 @@
         force: true
       loop:
         - minecraft-weather-clear.sh
-        - minecraft-restart-server.sh
 
     - name: "Crontab: refresh certificates"
       ansible.builtin.cron:
@@ -228,10 +247,10 @@
         job: /usr/local/bin/minecraft-weather-clear.sh
         user: root
 
-    - name: "Crontab: minecraft restart server"
+    - name: "Crontab: minecraft backup and restart"
       ansible.builtin.cron:
-        name: Minecraft restart server
+        name: Minecraft backup and restart server
         hour: 7
         minute: 10
-        job: /usr/local/bin/minecraft-restart-server.sh
+        job: /usr/local/bin/minecraft-backup.sh >> /var/log/mc-backup.log
         user: root

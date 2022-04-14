@@ -12,6 +12,7 @@ def playbook_run(c, security=False):
         f"""
             ansible-playbook -i hosts playbook.yml \
                 --private-key ~/.ssh/id_rsa \
+                -e @vault.yml \
                 --diff \
                 {security_cmd}
         """,

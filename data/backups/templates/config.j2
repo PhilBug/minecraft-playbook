@@ -1,0 +1,7 @@
+[default]
+s3 =
+    endpoint_url = {{ bucket_endpoint_url }}
+    multipart_threshold = 60MB
+    multipart_chunksize = 60MB
+[plugins]
+endpoint = awscli_plugin_endpoint
