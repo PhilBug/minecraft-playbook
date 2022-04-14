@@ -4,8 +4,8 @@ set -e
 
 DATE=$(date +%Y-%m-%d)
 BACKUP_FILE_NAME="minecraft-backup-$DATE.tgz"
-MINECRAFT_WORLD_DIR="/opt/minecraft" # {{ minecraft_dir }}
-BUCKET_NAME="kwadratowekarpicko" # {{ minecraft_backup_bucket }}
+MINECRAFT_WORLD_DIR="{{ minecraft_dir }}"
+BUCKET_NAME="{{ minecraft_backup_bucket }}"
 
 function log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $1"
@@ -22,7 +22,7 @@ function start_minecraft() {
 }
 
 function create_backup() {
-    cd $MINECRAFT_WORLD_DIR || exit 1
+    cd "$MINECRAFT_WORLD_DIR" || exit 1
     log "Creating backup..."
     tar -czvf "$BACKUP_FILE_NAME" "data/"
     log "Backup created."
@@ -48,6 +48,8 @@ function remove_s3_backups_older_than_n_days() {
     log "Backups older than $RETENTION_DAYS days removed."
 }
 
+echo 'msg @a WARNING!!! Server will be restarted in 60 seconds' | socat EXEC:"/usr/bin/docker attach minecraft_server",pty STDIN
+sleep 60
 stop_minecraft && sleep 5
 create_backup
 start_minecraft && sleep 5

@@ -2,6 +2,8 @@
 pip_install_packages:
   - name: docker
   - name: docker-compose
+  - name: awscli
+  - name: awscli-plugin-endpoint
 
 mc_monitor_version: 0.10.6
 ctop_version: 0.7.7
