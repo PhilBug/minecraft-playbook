@@ -30,7 +30,7 @@ function create_backup() {
 
 function upload_backup_to_bucket() {
     log "Uploading backup to bucket..."
-    aws s3 cp "$MINECRAFT_WORLD_DIR/$BACKUP_FILE_NAME" "s3://$BUCKET_NAME/$BACKUP_FILE_NAME"
+    aws s3 cp --no-progress "$MINECRAFT_WORLD_DIR/$BACKUP_FILE_NAME" "s3://$BUCKET_NAME/$BACKUP_FILE_NAME"
     log "Backup uploaded."
     rm -vf "$MINECRAFT_WORLD_DIR/$BACKUP_FILE_NAME"
     log "Local backup removed."

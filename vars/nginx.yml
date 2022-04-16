@@ -1,4 +1,5 @@
 ---
 nginx_dir: /opt/nginx
 nginx_domain: kwadratowe-karpicko.tk
+nginx_short_domain: kwkp.tk
 certbot_email: johnnywiertara@gmail.com
